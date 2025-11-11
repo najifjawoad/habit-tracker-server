@@ -21,7 +21,15 @@ async function run() {
   try {
     await client.connect();
 
-    
+    const db = client.db('habitDB');
+    const habitsCollection = db.collection('habits');
+
+    app.get('/habits', async(req, res)=>
+    {  
+        const result = await habitsCollection.find().toArray();
+        console.log(result);
+        res.send(result);
+    })
 
 
 
