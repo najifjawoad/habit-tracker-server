@@ -23,11 +23,20 @@ async function run() {
 
     const db = client.db('habitDB');
     const habitsCollection = db.collection('habits');
+    
 
+    // habits related API's
     app.get('/habits', async(req, res)=>
     {  
         const result = await habitsCollection.find().toArray();
         console.log(result);
+        res.send(result);
+    })
+
+    app.post('/habits' , async (req, res)=>
+    {   
+        const data = req.body;
+        const result = habitsCollection.insertOne(data)
         res.send(result);
     })
 
