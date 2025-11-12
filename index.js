@@ -1,6 +1,6 @@
-const express = require('express');
-const cors = require('cors');
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const express = require("express");
+const cors = require("cors");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = 3050;
 
@@ -21,71 +21,90 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     await client.connect();
-    const db = client.db('habitDB');
-    const habitsCollection = db.collection('habits');
+    const db = client.db("habitDB");
+    const habitsCollection = db.collection("habits");
 
-    // Get all habits (optionally filter by creatorEmail)
-    app.get('/habits', async (req, res) => {
-      const { email } = req.query; // ?email=user@example.com
+    
+    app.get("/habits", async (req, res) => {
+      const { email } = req.query;
       const query = email ? { creatorEmail: email } : {};
       const result = await habitsCollection.find(query).toArray();
       res.send(result);
     });
 
-    // Get single habit by ID
-    app.get('/habits/:id', async (req, res) => {
+ 
+    app.get("/habits/:id", async (req, res) => {
       const id = req.params.id;
       const habit = await habitsCollection.findOne({ _id: new ObjectId(id) });
-      if (!habit) return res.status(404).send({ message: 'Habit not found' });
+      if (!habit) return res.status(404).send({ message: "Habit not found" });
       res.send(habit);
     });
 
-    // Add habit
-    app.post('/habits', async (req, res) => {
+   
+    app.post("/habits", async (req, res) => {
       const data = req.body;
       const result = await habitsCollection.insertOne(data);
       res.send(result);
     });
 
-    // Update habit (PATCH) - for mark complete, undo, update title, etc.
-    app.patch('/habits/:id', async (req, res) => {
+   
+    app.patch("/habits/:id", async (req, res) => {
       const id = req.params.id;
-      const updateData = req.body; // { completionHistory: [...] }
+      const { action, date } = req.body;
 
-      const result = await habitsCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: updateData }
-      );
+      try {
+        let update;
+        if (action === "complete") {
+          
+          update = { $addToSet: { completionHistory: date } }; // 
+        } else if (action === "undo") {
+         
+          update = { $pull: { completionHistory: date } };
+        } else {
+         
+          update = { $set: req.body };
+        }
 
-      if (result.matchedCount === 0)
-        return res.status(404).send({ message: 'Habit not found' });
+        const result = await habitsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          update
+        );
 
-      res.send({ message: 'Habit updated successfully' });
+        if (result.matchedCount === 0)
+          return res.status(404).send({ message: "Habit not found" });
+
+        res.send({ message: "Habit updated successfully" });
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Server error" });
+      }
     });
 
-    // Delete habit
-    app.delete('/habits/:id', async (req, res) => {
+   
+    app.delete("/habits/:id", async (req, res) => {
       const id = req.params.id;
-      const result = await habitsCollection.deleteOne({ _id: new ObjectId(id) });
+      const result = await habitsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
 
       if (result.deletedCount === 0)
-        return res.status(404).send({ message: 'Habit not found' });
+        return res.status(404).send({ message: "Habit not found" });
 
-      res.send({ message: 'Habit deleted successfully' });
+      res.send({ message: "Habit deleted successfully" });
     });
 
-    console.log("Server connected to MongoDB!");
+    console.log("✅ Server connected to MongoDB!");
   } finally {
-    // Keep the connection alive
+  
   }
 }
 
 run().catch(console.dir);
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
+app.get("/", (req, res) => {
+  res.send("Hello World!");
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`🚀 Server running on port ${port}`);
 });
