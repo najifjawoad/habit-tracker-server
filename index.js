@@ -24,15 +24,25 @@ async function run() {
     const db = client.db("habitDB");
     const habitsCollection = db.collection("habits");
 
-    
+   
     app.get("/habits", async (req, res) => {
-      const { email } = req.query;
+      const { email, featured } = req.query; 
       const query = email ? { creatorEmail: email } : {};
-      const result = await habitsCollection.find(query).toArray();
+      
+      let cursor = habitsCollection.find(query);
+
+      if (featured === "true") {
+        
+        cursor = cursor
+          .sort({ createdAt: -1 }) 
+          .limit(6); 
+      }
+
+      const result = await cursor.toArray();
       res.send(result);
     });
+   
 
- 
     app.get("/habits/:id", async (req, res) => {
       const id = req.params.id;
       const habit = await habitsCollection.findOne({ _id: new ObjectId(id) });
@@ -40,14 +50,12 @@ async function run() {
       res.send(habit);
     });
 
-   
     app.post("/habits", async (req, res) => {
       const data = req.body;
       const result = await habitsCollection.insertOne(data);
       res.send(result);
     });
 
-   
     app.patch("/habits/:id", async (req, res) => {
       const id = req.params.id;
       const { action, date } = req.body;
@@ -55,13 +63,13 @@ async function run() {
       try {
         let update;
         if (action === "complete") {
-          
-          update = { $addToSet: { completionHistory: date } }; // 
+        
+          update = { $addToSet: { completionHistory: date } };
         } else if (action === "undo") {
-         
+          
           update = { $pull: { completionHistory: date } };
         } else {
-         
+        
           update = { $set: req.body };
         }
 
@@ -80,7 +88,6 @@ async function run() {
       }
     });
 
-   
     app.delete("/habits/:id", async (req, res) => {
       const id = req.params.id;
       const result = await habitsCollection.deleteOne({
@@ -95,7 +102,7 @@ async function run() {
 
     console.log("✅ Server connected to MongoDB!");
   } finally {
-  
+   
   }
 }
 
