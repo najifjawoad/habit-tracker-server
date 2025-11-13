@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = 3050;
@@ -7,8 +8,9 @@ const port = 3050;
 app.use(cors());
 app.use(express.json());
 
+
 const uri =
-  "mongodb+srv://habitTrackerDB:MNqcaZm0zzQxvqlq@cluster0.fz86p7x.mongodb.net/?appName=Cluster0";
+  `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.fz86p7x.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
